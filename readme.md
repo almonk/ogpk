@@ -3,6 +3,17 @@
 `ogpk` is a simple CLI tool written in Go that fetches OpenGraph data from a given URL. If the optional dependency `timg` is installed, `ogpk` can also display the `og:image` directly in the terminal.
 
 
+### Installation
+
+* Go to the [releases page](/releases) and download the latest release for your platform.
+* Extract the archive and move the executable to a directory in your `PATH` (e.g. `/usr/local/bin`)
+* Make the executable executable, e.g.:
+
+```bash
+chmod +x /usr/local/bin/ogpk
+```
+
+
 ### Usage
 
 To fetch OpenGraph data from a website:
