@@ -35,10 +35,8 @@ ogpk [URL] --p
 
 Clone this repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/ogpk.git
+git clone https://github.com/almonk/ogpk.git
 ```
-(Replace `YOUR_USERNAME` with your actual GitHub username)
-
 Navigate to the cloned directory:
 ```bash
 cd ogpk
