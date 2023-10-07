@@ -1,0 +1,4 @@
+.vscode/
+build/
+go.sum
+.DS_Store
