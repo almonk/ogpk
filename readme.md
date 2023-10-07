@@ -6,6 +6,15 @@
 
 ### Installation
 
+On macOS:
+
+```bash
+brew tap almonk/ogpk
+brew install ogpk
+```
+
+On linux:
+
 * Go to the [releases page](/releases) and download the latest release for your platform.
 * Extract the archive and move the executable to a directory in your `PATH` (e.g. `/usr/local/bin`)
 * Make the executable executable, e.g.:
