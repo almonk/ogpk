@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -122,6 +123,7 @@ func saveImage(data []byte) (string, error) {
 
 func main() {
 	var pFlag bool
+	var jsonFlag bool
 
 	args := os.Args[1:]
 	for i, arg := range args {
@@ -130,11 +132,22 @@ func main() {
 			args = append(args[:i], args[i+1:]...)
 			break
 		}
+
+		if arg == "--json" {
+			jsonFlag = true
+			args = append(args[:i], args[i+1:]...)
+			break
+		}
 	}
 
 	if len(args) != 1 {
-		fmt.Println("Usage: ogpk <url> [--p]")
-		fmt.Printf("Version %s\n", version)
+		fmt.Println("Usage: ogpk <url> [options]")
+		// Print out options
+		fmt.Println("\nOptions:")
+		fmt.Println("  --p\t\tPreview image")
+		fmt.Println("  --json\tOutput as JSON")
+
+		fmt.Printf("\nVersion %s\n", version)
 		return
 	}
 	url := args[0]
@@ -158,8 +171,18 @@ func main() {
 	sort.Strings(keys)
 
 	// Display the OpenGraph data in order by key name
-	for _, k := range keys {
-		fmt.Printf("%s%s%s: %s\n", Green, k, Reset, ogData[k])
+	if jsonFlag {
+		// Convert the map to JSON
+		jsonData, err := json.MarshalIndent(ogData, "", "  ")
+		if err != nil {
+			log.Fatalf("Error converting data to JSON: %v", err)
+		}
+		fmt.Println(string(jsonData))
+	} else {
+		// Display the data in the terminal
+		for _, k := range keys {
+			fmt.Printf("%s%s%s: %s\n", Green, k, Reset, ogData[k])
+		}
 	}
 
 	if imageURL, ok := ogData["og:image"]; ok && pFlag {
