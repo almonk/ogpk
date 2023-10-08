@@ -15,7 +15,7 @@ brew install ogpk
 
 On linux:
 
-* Go to the [releases page](/releases) and download the latest release for your platform.
+* Go to the [releases page](https://github.com/almonk/ogpk/releases) and download the latest release for your platform.
 * Extract the archive and move the executable to a directory in your `PATH` (e.g. `/usr/local/bin`)
 * Make the executable executable, e.g.:
 
