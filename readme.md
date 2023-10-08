@@ -40,6 +40,11 @@ To display the `og:image` in the terminal (requires `timg`):
 ogpk [URL] --p
 ```
 
+Output data as JSON:
+```bash
+ogpk [URL] --json
+```
+
 ### Building from source
 
 Clone this repository:
