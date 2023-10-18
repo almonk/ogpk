@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -17,9 +18,109 @@ import (
 var version = "dev"
 
 const (
-	Green = "\033[32m"
-	Reset = "\033[0m"
+	Green        = "\033[32m"
+	Reset        = "\033[0m"
+	Ghostty      = "ghostty"
+	XtemKitty    = "xtem-kitty"
+	ITermApp     = "iTerm.app"
+	OpenGraphPre = "og:"
 )
+
+func main() {
+	pFlag := flag.Bool("p", false, "Show og:image")
+	jsonFlag := flag.Bool("json", false, "Output as JSON")
+
+	// Parse the flags
+	flag.Parse()
+
+	// Get the non-flag arguments
+	args := flag.Args()
+
+	// Check if we have a URL
+	if len(args) != 1 {
+		fmt.Println("Usage: ogpk [options] <url>")
+		flag.PrintDefaults()
+		fmt.Printf("\nVersion %s\n", version)
+		return
+	}
+
+	url := parseURL(args[0])
+	ogData, err := getOpenGraphData(url)
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	if *jsonFlag {
+		displayAsJSON(ogData)
+	} else {
+		displayInTerminal(ogData)
+	}
+
+	if imageURL, ok := ogData["og:image"]; ok && *pFlag {
+		displayImage(imageURL)
+	}
+}
+
+// parseURL parses a URL and adds the protocol prefix if it's missing.
+func parseURL(input string) string {
+	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+		return "http://" + input
+	}
+	return input
+}
+
+// getOpenGraphData fetches OpenGraph data from a given URL.
+func getOpenGraphData(url string) (map[string]string, error) {
+	doc, err := fetchHTML(url)
+	if err != nil {
+		return nil, fmt.Errorf("fetching URL: %w", err)
+	}
+	return extractOpenGraphData(doc), nil
+}
+
+// displayAsJSON displays OpenGraph data as JSON.
+func displayAsJSON(ogData map[string]string) {
+	jsonData, err := json.MarshalIndent(ogData, "", "  ")
+	if err != nil {
+		log.Fatalf("Error converting data to JSON: %v", err)
+	}
+	fmt.Println(string(jsonData))
+}
+
+// displayInTerminal displays OpenGraph data in the terminal.
+func displayInTerminal(ogData map[string]string) {
+	var keys []string
+	for k := range ogData {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		fmt.Printf("%s%s%s: %s\n", Green, k, Reset, ogData[k])
+	}
+}
+
+// displayImage downloads and displays an image from a given URL.
+func displayImage(imageURL string) {
+	imgData, err := downloadImage(imageURL)
+	if err != nil {
+		log.Fatalf("Error downloading image: %v", err)
+	}
+
+	filePath, err := saveImage(imgData)
+	if err != nil {
+		log.Fatalf("Error saving image: %v", err)
+	}
+
+	_, err = exec.LookPath("timg")
+	if err == nil {
+		if err := displayImageWithTimg(filePath); err != nil {
+			log.Fatalf("Error displaying image with timg: %v", err)
+		}
+	} else {
+		fmt.Println("timg not found, image saved to:", filePath)
+	}
+}
 
 // fetchHTML fetches and parses HTML from a given URL.
 func fetchHTML(url string) (*html.Node, error) {
@@ -66,11 +167,11 @@ func displayImageWithTimg(path string) error {
 	cmdArgs := []string{path}
 
 	switch terminalName() {
-	case "ghostty":
+	case Ghostty:
 		cmdArgs = append(cmdArgs, "-pk")
-	case "xtem-kitty":
+	case XtemKitty:
 		cmdArgs = append(cmdArgs, "-pk")
-	case "iTerm.app":
+	case ITermApp:
 		cmdArgs = append(cmdArgs, "-pi")
 	}
 
@@ -122,93 +223,4 @@ func saveImage(data []byte) (string, error) {
 	tmpFile.Close()
 
 	return tmpFile.Name(), nil
-}
-
-func main() {
-	var pFlag bool
-	var jsonFlag bool
-
-	args := os.Args[1:]
-	for i, arg := range args {
-		if arg == "--p" {
-			pFlag = true
-			args = append(args[:i], args[i+1:]...)
-			break
-		}
-
-		if arg == "--json" {
-			jsonFlag = true
-			args = append(args[:i], args[i+1:]...)
-			break
-		}
-	}
-
-	if len(args) != 1 {
-		fmt.Println("Usage: ogpk <url> [options]")
-		// Print out options
-		fmt.Println("\nOptions:")
-		fmt.Println("  --p\t\tPreview image")
-		fmt.Println("  --json\tOutput as JSON")
-
-		fmt.Printf("\nVersion %s\n", version)
-		return
-	}
-	url := args[0]
-
-	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
-		url = "http://" + url
-	}
-
-	doc, err := fetchHTML(url)
-	if err != nil {
-		log.Fatalf("Error fetching URL: %v", err)
-	}
-
-	ogData := extractOpenGraphData(doc)
-
-	// Collect and sort the keys
-	var keys []string
-	for k := range ogData {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	// Display the OpenGraph data in order by key name
-	if jsonFlag {
-		// Convert the map to JSON
-		jsonData, err := json.MarshalIndent(ogData, "", "  ")
-		if err != nil {
-			log.Fatalf("Error converting data to JSON: %v", err)
-		}
-		fmt.Println(string(jsonData))
-	} else {
-		// Display the data in the terminal
-		for _, k := range keys {
-			fmt.Printf("%s%s%s: %s\n", Green, k, Reset, ogData[k])
-		}
-	}
-
-	if imageURL, ok := ogData["og:image"]; ok && pFlag {
-		imgData, err := downloadImage(imageURL)
-		if err != nil {
-			log.Fatalf("Error downloading image: %v", err)
-		}
-
-		filePath, err := saveImage(imgData)
-		if err != nil {
-			log.Fatalf("Error saving image: %v", err)
-		}
-
-		// Check if timg is available
-		_, err = exec.LookPath("timg")
-		if err == nil {
-			// If timg is available, display the image using timg
-			if err := displayImageWithTimg(filePath); err != nil {
-				log.Fatalf("Error displaying image with timg: %v", err)
-			}
-		} else {
-			fmt.Println("timg not found, image saved to:", filePath)
-		}
-	}
-
 }
