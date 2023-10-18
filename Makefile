@@ -26,4 +26,27 @@ install:
 clean:
 	rm -rf $(BUILD_DIR)
 
+sha:
+	@sha256sum $(BUILD_DIR)/* | sed 's/build\///g' | sed 's/  /  /g'
+
+formula:
+	@FILENAME=$(BINARY_NAME)-$(VERSION)-darwin-amd64; \
+	LOCAL_PATH=$(BUILD_DIR)/$$FILENAME; \
+	if [ ! -f $$LOCAL_PATH ]; then \
+		echo "Error: Binary not found at $$LOCAL_PATH. Ensure you have built it."; \
+		exit 1; \
+	fi; \
+	SHA256=$$(shasum -a 256 $$LOCAL_PATH | awk '{print $$1}'); \
+	echo "class Ogpk < Formula"; \
+	echo "  desc \"CLI tool to fetch OpenGraph data from a URL\""; \
+	echo "  homepage \"https://github.com/almonk/$(BINARY_NAME)\""; \
+	echo "  url \"https://github.com/almonk/$(BINARY_NAME)/releases/download/$(VERSION)/$$FILENAME\""; \
+	echo "  sha256 \"$$SHA256\""; \
+	echo "  version \"$(VERSION)\""; \
+	echo ""; \
+	echo "  def install"; \
+	echo "    bin.install \"$(BINARY_NAME)-$(VERSION)-darwin-amd64\" => \"$(BINARY_NAME)\""; \
+	echo "  end"; \
+	echo "end";
+
 .PHONY: all darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 install clean
