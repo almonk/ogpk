@@ -74,6 +74,9 @@ func displayImageWithTimg(path string) error {
 		cmdArgs = append(cmdArgs, "-pi")
 	}
 
+	// Set the height to 12 grid units
+	cmdArgs = append(cmdArgs, "-gx12")
+
 	cmd := exec.Command("timg", cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
